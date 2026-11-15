@@ -1,31 +1,41 @@
-name: Unit Test
+name: Browser Extension Verification
 
 on:
   push:
-    branches:
-      - main
+    branches: ["**"]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  unit-test:
-    runs-on: ubuntu-latest
-
+  verify:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8.6.0
-
-      - uses: actions/setup-node@v3
+          version: 9.1.3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: 'pnpm'
-
-      - name: Install packages
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Run test
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+      - name: Unit tests
         run: pnpm test
+      - name: Lint
+        run: pnpm lint
+      - name: Build Chromium and Firefox packages
+        run: pnpm build:extension
+      - name: Upload extension packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-extension-builds
+          path: |
+            dist/browser-extension/chromium.zip
+            dist/browser-extension/firefox.zip
+          if-no-files-found: error
