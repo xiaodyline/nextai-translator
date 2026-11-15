@@ -47,6 +47,9 @@
     "exclude": [
         "node_modules",
         "dist",
+        "src/common/polyfills/userscript.ts",
+        "src/common/polyfills/tauri.ts",
+        "src/common/polyfills/electron.ts",
         "src/common/polyfills/userscript.ts"
     ]
 }

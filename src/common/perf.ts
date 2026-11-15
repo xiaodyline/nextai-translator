@@ -5,7 +5,7 @@
  * different processes, so guessing which one is guilty is hopeless:
  *
  *   submit -> prompt build -> settings read -> engine setup -> HTTP dispatch
- *     -> DNS/TCP/TLS -> provider thinking -> first byte -> IPC -> first paint
+ *     -> DNS/TCP/TLS -> provider thinking -> first byte -> first paint
  *
  * Every hop below is stamped with a monotonic clock, and a finished trace is
  * printed as one line that attributes the whole latency:
@@ -70,10 +70,6 @@ function round(value: number): number {
     return Math.round(value * 10) / 10
 }
 
-function isDesktopApp(): boolean {
-    return typeof window !== 'undefined' && (window as unknown as Record<string, unknown>)['__TAURI__'] !== undefined
-}
-
 let tracingEnabledOverride: boolean | undefined
 
 function isTracingEnabled(): boolean {
@@ -90,9 +86,7 @@ function isTracingEnabled(): boolean {
         }
         // eslint-disable-next-line no-empty
     } catch (e) {}
-    // The desktop app has no open devtools by default, so its traces are
-    // forwarded to the Rust side and printed to stdout instead.
-    return isDesktopApp()
+    return false
 }
 
 function formatValue(value: string | number | boolean | undefined): string {
@@ -265,16 +259,7 @@ function pushFinished(summary: PerfTraceSummary): void {
     }
 }
 
-function forwardToDesktopApp(line: string): void {
-    if (!isDesktopApp()) {
-        return
-    }
-    import('@/tauri/bindings')
-        .then(({ commands }) => commands.logPerfLine(line))
-        .catch(() => {
-            // Tracing must never break a translation.
-        })
-}
+
 
 export interface FinishPerfOptions {
     silent?: boolean
@@ -300,7 +285,6 @@ export function finishPerfTrace(reason = 'done', options: FinishPerfOptions = {}
     try {
         // eslint-disable-next-line no-console
         console.info(summary.report)
-        forwardToDesktopApp(summary.line)
         // eslint-disable-next-line no-empty
     } catch (e) {}
     return summary

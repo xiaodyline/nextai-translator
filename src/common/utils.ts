@@ -2,12 +2,9 @@
 import { createParser } from 'eventsource-parser'
 import { IBrowser, ISettings } from './types'
 import { getUniversalFetch } from './universal-fetch'
-import { v4 as uuidv4 } from 'uuid'
-import { listen, Event, emit } from '@tauri-apps/api/event'
 import { parse as bestEffortJSONParse } from 'best-effort-json-parser'
-import { commands } from '@/tauri/bindings'
 import { OPENAI_CHAT_COMPLETIONS_API_PATH, OPENAI_PREFERRED_DEFAULT_MODEL } from './openai-api-path'
-import { FetchStreamTimings, markPerf, recordPerfServerTimings } from './perf'
+import { markPerf } from './perf'
 
 export const defaultAPIURL = 'https://api.openai.com'
 export const defaultAPIURLPath = OPENAI_CHAT_COMPLETIONS_API_PATH
@@ -163,7 +160,7 @@ export async function getSettings(): Promise<ISettings> {
         settings.writingTargetLanguage = defaultWritingTargetLanguage
     }
     if (settings.alwaysShowIcons === undefined || settings.alwaysShowIcons === null) {
-        settings.alwaysShowIcons = !isTauri()
+        settings.alwaysShowIcons = true
     }
     if (!settings.i18n) {
         settings.i18n = defaulti18n
@@ -290,24 +287,11 @@ export async function getBrowser(): Promise<IBrowser> {
     if (isElectron()) {
         return (await import('./polyfills/electron')).electronBrowser
     }
-    if (isTauri()) {
-        return (await import('./polyfills/tauri')).tauriBrowser
-    }
+
     if (isUserscript()) {
         return (await import('./polyfills/userscript')).userscriptBrowser
     }
     return (await import('webextension-polyfill')).default
-}
-
-export const isElectron = () => {
-    return navigator.userAgent.indexOf('Electron') >= 0
-}
-
-export const isTauri = () => {
-    if (typeof window === 'undefined') {
-        return false
-    }
-    return window['__TAURI__' as any] !== undefined
 }
 
 export const isBrowserExtensionOptions = () => {
@@ -322,15 +306,6 @@ export const isBrowserExtensionContentScript = () => {
         return false
     }
     return window['__IS_OT_BROWSER_EXTENSION_CONTENT_SCRIPT__' as any] !== undefined
-}
-
-export const isDesktopApp = () => {
-    return isElectron() || isTauri()
-}
-
-export const isUserscript = () => {
-    // eslint-disable-next-line camelcase
-    return typeof GM_info !== 'undefined'
 }
 
 export const isDarkMode = async () => {
@@ -643,9 +618,6 @@ export async function fetchSSE(input: string, options: FetchSSEOptions) {
 }
 
 export function getAssetUrl(asset: string) {
-    if (isUserscript()) {
-        return asset
-    }
     return new URL(asset, import.meta.url).href
 }
 export const isMacOS = navigator.userAgent.includes('Mac OS X')
