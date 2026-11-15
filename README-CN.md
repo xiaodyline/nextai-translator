@@ -1,6 +1,6 @@
 # NextAI Translator
 
-基于大语言模型的浏览器翻译扩展，支持网页划词翻译、文本润色和内容总结。本项目仅维护浏览器扩展版本。
+NextAI Translator 是一款基于大语言模型的浏览器翻译扩展，面向网页划词翻译、文本润色和内容总结等使用场景。项目围绕 Chromium 内核浏览器与 Firefox 提供统一的扩展体验。
 
 ## 支持的浏览器
 
@@ -38,7 +38,7 @@ pnpm dev:firefox
 
 ## 构建与验证
 
-构建两个浏览器版本：
+构建 Chromium 和 Firefox 两个浏览器版本：
 
 ```bash
 pnpm build
@@ -72,18 +72,18 @@ pnpm lint
 1. 执行构建。
 2. 打开 `chrome://extensions`。
 3. 开启开发者模式。
-4. 点击“加载已解压的扩展程序”，选择 `dist/browser-extension/chromium`。
+4. 选择“加载已解压的扩展程序”，载入 `dist/browser-extension/chromium`。
 
 ### Firefox
 
 1. 执行构建。
 2. 打开 `about:debugging#/runtime/this-firefox`。
-3. 点击“临时载入附加组件”。
-4. 选择 `dist/browser-extension/firefox/manifest.json`。
+3. 选择“临时载入附加组件”。
+4. 载入 `dist/browser-extension/firefox/manifest.json`。
 
 ## 配置
 
-打开扩展的选项页面，配置 AI 服务商、API 地址、API Key 和模型。使用第三方服务时，请确认其接口与项目当前支持的 OpenAI 兼容协议一致。
+打开扩展的选项页面，配置 AI 服务商、API 地址、API Key 和模型。使用第三方服务时，确认服务端接口与项目当前支持的 OpenAI 兼容协议相匹配。
 
 ## 项目结构
 
@@ -94,9 +94,9 @@ pnpm lint
 - `docs/`：中文使用说明和开发文档。
 - `.github/workflows/`：持续集成与浏览器扩展发布工作流。
 
-## 贡献约定
+## 贡献与协作
 
-开发前请阅读 [AGENTS.md](./AGENTS.md)。每次代码或文档修改完成后，都必须进行适当验证并提交 Git，不要将多个无关修改长期堆积在工作区。
+开发前阅读 [AGENTS.md](./AGENTS.md)，了解项目结构、代码约定和验证流程。每项独立修改完成后，按影响范围执行验证，并创建对应的 Git 提交；提交前核对变更范围，保持提交历史清晰可追溯。
 
 ## 许可证
 
