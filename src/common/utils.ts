@@ -347,23 +347,13 @@ export async function exportToCsv<T extends Record<string, string | number>>(fil
         csvFile += processRow(rows[i])
     }
 
-    if (isDesktopApp()) {
-        const { BaseDirectory, writeTextFile } = await import('@tauri-apps/plugin-fs')
-        try {
-            return await writeTextFile(filename, csvFile, { baseDir: BaseDirectory.Desktop })
-        } catch (e) {
-            console.error(e)
-        }
-    } else {
-        const link = document.createElement('a')
-        if (link.download !== undefined) {
-            link.setAttribute('href', 'data:text/csv;charset=utf-8,ufeff' + encodeURIComponent(csvFile))
-            link.setAttribute('download', filename)
-            // link.style.visibility = 'hidden'
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-        }
+    const link = document.createElement('a')
+    if (link.download !== undefined) {
+        link.setAttribute('href', 'data:text/csv;charset=utf-8,ufeff' + encodeURIComponent(csvFile))
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
     }
 }
 
