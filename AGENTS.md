@@ -1,26 +1,102 @@
-# Repository Guidelines
+# Agent 开发与协作规范
 
-## Project Structure & Module Organization
-- `src/browser-extension/` hosts extension surfaces (popup, options, background) and manifest tooling.
-- `src/tauri/` contains the React renderer for desktop windows, while `src/common/` keeps shared hooks, stores, and translator logic consumed by both targets.
-- `src-tauri/` is the Rust/Tauri backend for native commands, updates, and packaging; platform assets live in `src-tauri/resources` and `src-tauri/icons`.
-- Supporting content sits in `public/` (static assets), `scripts/` (build helpers), `docs/` (provider guides), and `e2e/` (Playwright specs). Build outputs land in `dist/` and long-lived bundles in `release/`.
+本文件是本仓库自动化 Agent 和贡献者的执行规范。开始修改前必须阅读，并在整个任务中遵守。
 
-## Build, Test, and Development Commands
-Install dependencies with `pnpm install` (package manager is pinned in `package.json`).
-- `pnpm dev-chromium` starts the extension in Vite with HMR; `pnpm dev-tauri` boots the desktop shell with Tauri devtools.
-- `pnpm build-browser-extension`, `pnpm build-tauri`, and `pnpm build-userscript` produce distributable bundles; use `pnpm clean` to reset `dist/` before packaging.
-- `pnpm test` runs Vitest suites and `pnpm test:e2e` executes Playwright specs in `e2e/`.
-- `pnpm lint`, `pnpm lint:fix`, and `pnpm format` keep ESLint and Prettier satisfied across TS/JS/CSS/MD files.
+## 1. 项目目标与范围
 
-## Coding Style & Naming Conventions
-TypeScript + React 18 (with Styletron) is the primary stack. Keep 4-space indentation, single quotes, and trailing commas—Prettier enforces this, so format before pushing. Components stay in `PascalCase`, hooks/utilities in `camelCase`, and constants in `SCREAMING_SNAKE_CASE`. Reuse helpers from `src/common` instead of duplicating logic, and keep staged files lint-clean to satisfy the pre-commit hook.
+本项目是一个 AI 浏览器翻译扩展，只维护浏览器扩展版本。
 
-## Testing Guidelines
-Unit tests live next to the code (`__tests__/foo.test.ts` or `foo.spec.ts`) and run with Vitest. Mock remote APIs and keep snapshots deterministic, especially around translation results. Update Playwright specs in `e2e/*.spec.ts` when UI flows change, and verify `pnpm test` plus `pnpm test:e2e` before requesting review.
+- 支持 Chromium 内核浏览器和 Firefox。
+- 浏览器扩展入口位于 `src/browser-extension/`。
+- 共享业务逻辑位于 `src/common/`。
+- 中文文档位于 `docs/`，项目说明以根目录 `README.md` 为准。
+- 构建产物输出到 `dist/`，不得提交构建产物。
 
-## Commit & Pull Request Guidelines
-Follow the lightweight conventional pattern seen in history (`fix:`, `feat:`, `chore:`) with concise, imperative summaries and optional scope (e.g., `fix: handle streaming fallback`). Reference related issues in parentheses `(#1234)` when helpful. PRs should describe the change, attach screenshots or GIFs for UI work, list verification commands, and call out platform coverage across Chrome, Firefox, and Tauri targets. Request review after lint/tests pass and diffs are free of secrets.
+不得重新引入 Tauri、Electron、Safari 原生应用、PopClip、SnipDo、Userscript 或其他非浏览器扩展产品形态。不得为已删除的平台恢复专用代码、依赖、构建脚本、CI 或文档。
 
-## Security & Configuration Tips
-Never commit API keys or user artifacts; rely on runtime configuration via the in-app settings or local `.env` files ignored by git. When adding providers, document required environment keys under `docs/` and guard sensitive defaults behind toggles in `src/common`.
+## 2. 修改前检查
+
+每次任务开始前：
+
+1. 阅读本文件和相关模块代码，确认当前分支、工作区状态及最近提交。
+2. 检查 `package.json`、锁文件、Vite 配置和相关测试，确认实际构建入口。
+3. 先定位问题和影响范围，再实施最小必要修改。
+4. 不覆盖、不丢弃、不擅自整理与当前任务无关的用户修改。
+5. 如果发现工作区已有未提交修改，先识别归属；不得将其混入自己的提交。
+
+## 3. 工程约定
+
+- 使用 TypeScript 和 React，沿用项目现有技术栈与代码风格。
+- 保持现有格式约定：4 空格缩进、单引号，组件使用 PascalCase，变量和函数使用 camelCase。
+- 优先复用 `src/common/` 中已有的能力，避免重复实现。
+- 不做与任务无关的大规模重构，不随意升级依赖。
+- 新增依赖前先确认是否能用现有依赖或浏览器原生 API 实现。
+- 修改翻译、流式输出、存储、权限、消息通信等核心逻辑时，必须检查 Chromium 和 Firefox 的兼容性。
+- 不得在代码、测试、日志和文档中写入真实 API Key、Token、Cookie 或其他凭据。
+
+## 4. 文档语言
+
+- 项目文档、开发说明、注释性说明和提交给仓库的 Markdown 文档统一使用简体中文。
+- README 的正文使用简体中文；必要的技术名词、命令、文件名、API 名称和代码标识符保留原文。
+- 新增文档放入 `docs/`，文件名优先使用简洁、明确的中文名称。
+- 修改功能时同步检查相关文档，删除过时描述，禁止保留桌面端或其他已移除平台的说明。
+- 不要只翻译标题；命令、配置项和操作步骤也必须准确且可执行。
+
+## 5. 验证要求
+
+根据改动范围执行验证，不得声称执行过实际未运行的命令。
+
+至少按需执行：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm exec tsc --noEmit
+pnpm test
+pnpm lint
+pnpm build
+pnpm build:extension
+```
+
+- 影响共享逻辑时，运行相关单元测试。
+- 影响浏览器入口、Manifest、权限、消息通信或构建配置时，至少构建 Chromium 和 Firefox。
+- 影响用户交互时，检查对应 E2E 测试；必要时补充测试。
+- 如果环境限制导致某项验证无法执行，必须在提交说明或最终报告中明确写出未执行项及原因，不得伪造通过结果。
+- 修复验证中发现的问题后，重新执行受影响的验证。
+
+## 6. 每次修改必须提交 Git（强制）
+
+**每次任务产生的代码、配置或文档修改，在完成验证后都必须提交 Git。不得只修改文件而不提交。**
+
+执行规则：
+
+1. 一个逻辑独立的修改完成并验证后，立即创建一个独立提交；不要把多个无关任务攒成一个大提交。
+2. 提交前检查 `git status` 和 `git diff`，确认只包含本次任务的预期文件。
+3. 只暂存本次修改涉及的文件，禁止无差别执行 `git add .` 或 `git add -A`，除非已确认工作区所有变更都属于当前任务。
+4. 提交信息使用 Conventional Commits 格式，类型使用 `feat`、`fix`、`refactor`、`docs`、`test`、`build`、`ci`、`chore` 等，主题简洁明确。例如：
+   - `feat(translate): 增加选中文本翻译`
+   - `fix(stream): 修复流式响应结束时的文本丢失`
+   - `docs: 更新浏览器扩展安装说明`
+   - `refactor(settings): 简化模型配置读取`
+5. 提交后检查提交记录和工作区状态，确认提交成功且没有遗留本次修改。
+6. 如果提交失败，必须说明具体原因并继续尝试在当前授权范围内解决；不得声称已经提交。
+7. 未经用户明确要求，不得强制推送、重写公共历史、删除远端分支或修改他人的提交。
+8. 不得把密钥、构建产物、临时文件、个人配置或无关文件提交到仓库。
+
+## 7. 分支与发布
+
+- 日常修改优先使用独立功能分支，通过 Pull Request 合并到 `main`。
+- 不得绕过验证直接发布。
+- Release 必须由已验证的版本标签触发，并确认 Chromium 与 Firefox 分发包均生成成功。
+- 发布前检查版本号、变更说明、压缩包内容和 Manifest。
+- 不得将未经构建和安装验证的产物称为可用 Release。
+
+## 8. 完成报告
+
+每次任务结束时，使用中文简要说明：
+
+1. 修改内容及影响范围。
+2. 执行过的验证命令和实际结果。
+3. 提交 SHA、提交信息及所在分支。
+4. 尚未完成的事项、验证限制或风险。
+
+只有实际完成的工作才能标记为完成。
